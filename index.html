@@ -20,8 +20,8 @@
 
         .col {
             background-color: AliceBlue;
-            height: 300px;
-            width: 300px;
+            height: 320px;
+            width: 360px;
             text-align: center;
         }
     </style>
@@ -30,19 +30,19 @@
 <body>
 
     <div class="body">
-        <table width="600">
+        <table width="800">
             <tr>
                 <td colspan="2" class="head">
-                    <h2>anyShare</h2>
+                    <h1>anyShare</h1>
                 </td>
             </tr>
 
             <tr>
                 <td class="col">
-                    <form action="/text" style="margin-left: 5px; margin-right: 5px; margin-bottom: 5px;">
+                    <form action="/text" style="margin-left: 5%; margin-right: 5%; margin-bottom: 5%;">
                         <fieldset>
-                            <legend style="text-align :center; margin-bottom: 13px">分享文字</legend>
-                            <textarea rows="11" cols="31" name="text">
+                            <legend style="text-align :center; margin-bottom: 4%">分享文字</legend>
+                            <textarea rows="12" cols="40" name="text">
                             </textarea><br><br>
                             <input type="submit" value="分享"><br>
                         </fieldset>
@@ -51,13 +51,13 @@
 
                 </td>
                 <td class="col">
-                    <div id="hidden" style="height: 90px; margin-left: 5px; margin-right: 5px; display: none;">
+                    <div id="hidden" style="height: 90px; margin-left: 5%; margin-right: 5%; display: none;">
                         <p id="msg"></p>
                         <h3 id="id"></h3>
                         <button id="reupload">重新上传</button>
                     </div>
 
-                    <form id="show" action="/upload" style="height: 100px; margin-left: 5px; margin-right: 5px;"
+                    <form id="show" action="/upload" style="height: 100px; margin-left: 5%; margin-right: 5%;"
                         enctype="multipart/form-data" method="post" target="upload_frame">
                         <fieldset>
                             <legend style="text-align:center; margin-bottom: 13px">分享文件</legend>
@@ -68,10 +68,10 @@
                     <iframe name='upload_frame' id="upload_frame" style='display: none'></iframe>
 
                     <form action="/download"
-                        style="margin-top: 25px; margin-left: 5px; margin-right: 5px; margin-bottom: 5px;">
+                        style="margin-top: 10%; margin-left: 5%; margin-right: 5%; margin-bottom: 5%;">
                         <fieldset>
                             <legend style="text-align:center;">提取</legend><br>
-                            请输入4位提取码:<br><br> <input type="text" size="14" name="id">&nbsp;&nbsp;
+                            请输入4位提取码:<br><br> <input type="text" size="10" name="id">&nbsp;&nbsp;
                             <input type="submit" value="提取"><br><br>
                         </fieldset>
                     </form>
