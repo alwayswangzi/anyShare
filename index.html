@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>anyShare</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <style type="text/css">
+        .body {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+        }
+
+        .head {
+            background-color: PowderBlue;
+            text-align: center;
+        }
+
+        .col {
+            background-color: AliceBlue;
+            height: 300px;
+            width: 300px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="body">
+        <table width="600">
+            <tr>
+                <td colspan="2" class="head">
+                    <h2>anyShare</h2>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="col">
+                    <form action="/text" style="margin-left: 5px; margin-right: 5px; margin-bottom: 5px;">
+                        <fieldset>
+                            <legend style="text-align :center; margin-bottom: 13px">分享文字</legend>
+                            <textarea rows="11" cols="31" name="text">
+                            </textarea><br><br>
+                            <input type="submit" value="分享"><br>
+                        </fieldset>
+                    </form>
+
+
+                </td>
+                <td class="col">
+                    <div id="hidden" style="height: 90px; margin-left: 5px; margin-right: 5px; display: none;">
+                        <p id="msg"></p>
+                        <h3 id="id"></h3>
+                        <button id="reupload">重新上传</button>
+                    </div>
+
+                    <form id="show" action="/upload" style="height: 100px; margin-left: 5px; margin-right: 5px;"
+                        enctype="multipart/form-data" method="post" target="upload_frame">
+                        <fieldset>
+                            <legend style="text-align:center; margin-bottom: 13px">分享文件</legend>
+                            <input type="file" name="file"><br><br>
+                            <input type="submit" value="上传"><br>
+                        </fieldset>
+                    </form>
+                    <iframe name='upload_frame' id="upload_frame" style='display: none'></iframe>
+
+                    <form action="/download"
+                        style="margin-top: 25px; margin-left: 5px; margin-right: 5px; margin-bottom: 5px;">
+                        <fieldset>
+                            <legend style="text-align:center;">提取</legend><br>
+                            请输入4位提取码:<br><br> <input type="text" size="14" name="id">&nbsp;&nbsp;
+                            <input type="submit" value="提取"><br><br>
+                        </fieldset>
+                    </form>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2" class="head">
+                    copyright 2021 © wangzihao 上传文件有效期为2小时
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+</body>
+
+<script>
+
+    $('#upload_frame').load(function () {
+        var text = $(this).contents().find("body").text();
+        if (text === "") {
+            return
+        }
+        var j = $.parseJSON(text);
+        $('#show').css("display", "none");
+        $('#hidden').css("display", "");
+        if (j.code === -1) {
+            $('#msg').empty()
+            $('#msg').append("上传失败!<br><br>");
+        } else {
+            $('#msg').empty()
+            $('#msg').append("上传成功，提取码为：");
+            $('#id').empty()
+            $('#id').append(j.data);
+        }
+    });
+
+    $("#reupload").click(function () {
+        $('#show').css("display", "");
+        $('#hidden').css("display", "none");
+    });
+
+</script>
+
+</html>
