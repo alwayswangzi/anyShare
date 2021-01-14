@@ -15,16 +15,18 @@ import (
 )
 
 type tmpFile struct {
-	ID         string `json:"id"`
-	FileName   string `json:"filename"`
-	Size       int64  `json:"size"`
-	CreatedAt  int64  `json:"created_at"`
-	ExpireTime int64  `json:"expired_time"`
+	ID          string `json:"id"`
+	FileName    string `json:"filename"`
+	Size        int64  `json:"size"`
+	CreatedAt   int64  `json:"created_at"`
+	ExpiredTime int64  `json:"expired_time"`
+	Text        string `json:"text"`
 }
 
 const (
-	maxFileSize = 100 * 1000 * 1000
-	tmpFileDir  = "tmp/"
+	maxFileSize        = 100 * 1000 * 1000
+	tmpFileDir         = "tmp/"
+	defaultExpiredTime = 2 * 60 * 60
 )
 
 var (
@@ -50,12 +52,13 @@ func main() {
 
 	s := sir.New()
 
-	s.Template("/index/", "index.html")
+	s.Template("/anyShare/index/", "index.html")
 
-	s.Handler("/upload", uploadFile)
-	s.Handler("/download", downloadFile)
+	s.Handler("/anyShare/upload", uploadFile)
+	s.Handler("/anyShare/download", downloadFile)
+	s.Handler("/anyShare/text", shareText)
 
-	s.ListenAndServe(":8082")
+	s.ListenAndServe(":8080")
 }
 
 func addShutdownHook(hook func()) {
@@ -108,28 +111,16 @@ func uploadFile(c *sir.Ctx) {
 		c.Fail(err)
 		return
 	}
-	id := randomStr()
-	// if id exist, random another one
-	for _, ok := tmpFileMap[id]; ok; {
-		id = randomStr()
+
+	id := getRandomID(tmpFileMap)
+	tmpFileMap[id] = tmpFile{
+		ID:          id,
+		FileName:    filename,
+		Size:        int64(len(bytes)),
+		CreatedAt:   time.Now().Unix(),
+		ExpiredTime: getExpiredTime(c),
 	}
 
-	tmpFile := tmpFile{
-		ID:         id,
-		FileName:   filename,
-		Size:       int64(len(bytes)),
-		CreatedAt:  time.Now().Unix(),
-		ExpireTime: 3600,
-	}
-	if t := c.GetQuery().Get("expired_time"); t != "" {
-		i, err := strconv.ParseInt(t, 10, 64)
-		if err != nil {
-			c.Fail(fmt.Errorf("invalid param expired_time, %v", err))
-			return
-		}
-		tmpFile.ExpireTime = i
-	}
-	tmpFileMap[id] = tmpFile
 	if err = ioutil.WriteFile(tmpFileDir+id, bytes, 0666); err != nil {
 		c.Fail(err)
 		return
@@ -151,25 +142,34 @@ func downloadFile(c *sir.Ctx) {
 		c.BadRequest()
 		return
 	}
-	if file.ExpireTime >= 0 && file.ExpireTime+file.CreatedAt < time.Now().Unix() {
+	if isExpired(&file) {
 		cleanExpiredFiles(tmpFileMap, tmpFileDir)
 		c.Fail()
 		return
 	}
-	bytes, err := ioutil.ReadFile(tmpFileDir + id)
-	if err != nil {
-		c.Fail(err)
-		return
+
+	if file.Text != "" {
+		c.Success(file.Text)
+	} else {
+		bytes, err := ioutil.ReadFile(tmpFileDir + id)
+		if err != nil {
+			c.Fail(err)
+			return
+		}
+		if err = c.Download(file.FileName, bytes); err != nil {
+			c.Fail(err)
+			return
+		}
 	}
-	if err = c.Download(file.FileName, bytes); err != nil {
-		c.Fail(err)
-		return
-	}
+}
+
+func isExpired(file *tmpFile) bool {
+	return file.ExpiredTime >= 0 && file.ExpiredTime+file.CreatedAt < time.Now().Unix()
 }
 
 func cleanExpiredFiles(m map[string]tmpFile, dir string) {
 	for name, file := range m {
-		if file.ExpireTime >= 0 && file.ExpireTime+file.CreatedAt < time.Now().Unix() {
+		if isExpired(&file) {
 			err := os.Remove(dir + name)
 			if err == nil {
 				delete(m, name)
@@ -178,4 +178,50 @@ func cleanExpiredFiles(m map[string]tmpFile, dir string) {
 			fmt.Printf("delete file %s failed, %v\n", name, err)
 		}
 	}
+}
+
+func getRandomID(m map[string]tmpFile) string {
+	id := randomStr()
+	for _, ok := tmpFileMap[id]; ok; {
+		id = randomStr()
+	}
+	return id
+}
+
+func shareText(c *sir.Ctx) {
+	text := c.GetQuery().Get("text")
+	if text == "" {
+		c.Fail(fmt.Errorf("invalid param text"))
+		return
+	}
+
+	id := getRandomID(tmpFileMap)
+	tmpFileMap[id] = tmpFile{
+		ID:          id,
+		FileName:    "",
+		Size:        int64(len(text)),
+		CreatedAt:   time.Now().Unix(),
+		ExpiredTime: getExpiredTime(c),
+		Text:        text,
+	}
+
+	go cleanExpiredFiles(tmpFileMap, tmpFileDir)
+
+	c.Success(id)
+}
+
+func getExpiredTime(c *sir.Ctx) int64 {
+	if t := c.GetQuery().Get("expired_time"); t != "" {
+		i, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			sir.LogError(fmt.Errorf("invalid param expired_time, %v", err))
+			return 0
+		}
+		if i <= 0 {
+			sir.LogError(fmt.Errorf("invalid expired_time=%d", i))
+			return 0
+		}
+		return i
+	}
+	return defaultExpiredTime
 }
