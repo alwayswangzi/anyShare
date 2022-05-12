@@ -58,7 +58,7 @@ func main() {
 	s.Handler("/anyShare/download", downloadFile)
 	s.Handler("/anyShare/text", shareText)
 
-	s.ListenAndServe(":8080")
+	s.ListenAndServe(":8082")
 }
 
 func addShutdownHook(hook func()) {
